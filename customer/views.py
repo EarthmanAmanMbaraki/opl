@@ -113,4 +113,4 @@ def create_excel(depot):
     dv2.add("B3:b100000")
     sheet.add_data_validation(dv)
     sheet.add_data_validation(dv2)
-    wb.save("DailyReportTemplate.xlsx")
+    wb.save(f"DailyReportTemplate{depot.id}.xlsx")

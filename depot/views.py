@@ -30,6 +30,7 @@ from customer.models import Customer, Truck
 
 from depot.serializers import ProductListSer, BISer, ProductBISer
 from order.models import Entry
+from customer.views import create_excel
 
 from . models import Product, Depot
 
@@ -151,9 +152,9 @@ class UploadExcel(APIView):
 		
 		
 		
-def download(request):
-    
-	with open("DailyReportTemplate.xlsx", 'rb') as fh:
+def download(request, depot_id):
+	create_excel(Depot.objects.get(pk=int(depot_id)))
+	with open(f"DailyReportTemplate{depot_id}.xlsx", 'rb') as fh:
 		response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
 		response['Content-Disposition'] = 'inline; filename=' + "DailyReportTemplate.xlsx"
 		return response
