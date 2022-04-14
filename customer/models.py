@@ -1,5 +1,8 @@
+from lib2to3.pgen2 import driver
 from django.db import models
 from depot.models import Depot
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Customer(models.Model):
     """Customer Model: This will hold information about a customer.
@@ -38,3 +41,8 @@ class Truck(models.Model):
 
     def __str__(self) -> str:
         return self.driver + " : " + self.customer.__str__()
+
+@receiver(post_save, sender=Customer)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+	if created:
+		Truck.objects.create(customer=instance, plate_no="default", driver="driver")
