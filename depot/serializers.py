@@ -1,9 +1,15 @@
 
 from ast import If
+from dataclasses import fields
 import datetime
+import quopri
+from unicodedata import name
+from django.contrib.auth.models import User
 from django.db.models import Sum, F, FloatField, Count
+from django.db.models.functions import ExtractMonth, ExtractYear
 from rest_framework.serializers import (
-	ModelSerializer, 
+	ModelSerializer,
+    Serializer, 
 	SerializerMethodField,
 	ValidationError,	
 	)
@@ -23,6 +29,111 @@ class ProductListSer(ModelSerializer):
             "name",
         ]
 
+class MainBISer(Serializer):
+    revenue = SerializerMethodField()
+    months = SerializerMethodField()
+    class Meta:
+        model = User
+        fields = [
+            "months",
+            "revenue",
+            
+        ]
+    
+    def get_months(self, obj):
+        products = list(set([prod.name for prod in Product.objects.all()]))
+        values = []
+        years = []
+        available_dates = []
+        for index, product in enumerate(products):
+            
+
+            totals = [v for v in Entry.objects.filter(product__name=product).annotate(month=ExtractMonth('date'), year=ExtractYear('date'),)
+                            .order_by()
+                            .values('month', 'year')
+                            .annotate(total=Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
+                            .values('month', 'year', 'total')
+            ]
+            quantities = [v for v in Entry.objects.filter(product__name=product).annotate(month=ExtractMonth('date'), year=ExtractYear('date'),)
+                            .order_by()
+                            .values('month', 'year')
+                            .annotate(total=Sum("vol_obs"))
+                            .values('month', 'year', 'total')
+            ]
+            for total in totals:
+                year = [idx for idx, item in enumerate(values) if item["year"] == total["year"]]
+                print(year)
+                if len(year) == 0:
+                    year_ = total["year"]
+                    
+                    values.append({
+                        "year":year_, 
+                        "products":[]
+                    })
+                    year = [idx for idx, item in enumerate(values) if item["year"] == total["year"]]
+                    
+                    for p in products:
+                        values[year[0]]["products"].append({
+                            "name": p,
+                            "values": [0] * 12,
+                            "quantities": [0] * 12,
+                        })
+                    values[year[0]]["products"][index]["values"][total["month"]-1] = total["total"]
+                else:
+                    print(index)
+                    print(values)
+                    values[year[0]]["products"][index]["values"][total["month"]-1] = total["total"]
+
+            for total in quantities:
+                year = [idx for idx, item in enumerate(values) if item["year"] == total["year"]]
+                values[year[0]]["products"][index]["quantities"][total["month"]-1] = total["total"]
+
+        return values
+    def get_revenue(self, obj):
+        products = list(set([prod.name for prod in Product.objects.all()]))
+        prod_values = []
+       
+        for product in products:
+            data = {}
+            data["name"] = product
+            values = []
+            quantity_value = []
+            available_dates = []
+            for depot in Depot.objects.all():
+                prods = depot.product_set.filter(name=product)
+                if prods.exists():
+                    prod = prods.last()
+
+                    totals = prod.entry_set.filter().values('date').order_by('date').annotate(sum=Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
+                    quantity_totals = prod.entry_set.filter().values('date').order_by('date').annotate(sum=Sum("vol_obs"))
+                    dates = [total["date"] for total in totals]
+                   
+
+                    for index, date in enumerate(dates):
+                        
+                        timestamp = int(datetime.datetime.combine(date, datetime.datetime.min.time()).timestamp()) * 1000
+                        
+                
+                        if date in available_dates:
+                            for idx, value in enumerate(values): 
+                                if value[0] == timestamp:
+                                    values[idx][1] += round(totals[index]["sum"] / 1000000, 2)
+                                    quantity_value[idx][1] += quantity_totals[index]["sum"]
+                        else:
+                            available_dates.append(date)
+                            
+                            values.append([timestamp, round(totals[index]["sum"] / 1000000, 2)])
+                            quantity_value.append([timestamp, quantity_totals[index]["sum"]])
+              
+                        
+                    data["dates"] = available_dates
+                    data["values"] = values
+                    data["quantities_values"] = quantity_value
+       
+            prod_values.append(data)
+        return prod_values
+                
+
 class BISer(ModelSerializer):
     daily_products_comp = SerializerMethodField()
     months = SerializerMethodField()
@@ -39,11 +150,7 @@ class BISer(ModelSerializer):
         ]
 
     def get_daily_products_comp(self, obj):
-        DAYS = 7
         products = []
-        base = datetime.date(2022, 1, 23)
-        date_list = [base - datetime.timedelta(days=x) for x in range(DAYS)]
-        date_list = sorted(date_list)
         total_earns = 0
         total_orders = 0
         total_customers = len(list(set([customer.truck.customer.name for customer in Entry.objects.filter(product__depot=obj)])))
@@ -54,23 +161,24 @@ class BISer(ModelSerializer):
             totals = product.entry_set.filter().values('date').order_by('date').annotate(sum=Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
             orders_totals = product.entry_set.filter().values('date').order_by('date').annotate(count=Count("id"))
             available_dates = [total["date"] for total in totals]
-            values = [0] * DAYS
-            orders = [0] * DAYS
-            total_earn = [0] * DAYS
-            total_order = [0] * DAYS
+            values = []
+            orders = []
+            total_earn = []
+            total_order = []
+
             for index, date in enumerate(available_dates):
                 try:
-                    idx = date_list.index(date)
-                    values[idx] = round(totals[index]["sum"] / 1000000, 2)
-                    orders[idx] = orders_totals[index]["count"]
+                    
+                    values.append(round(totals[index]["sum"] / 1000000, 2))
+                    orders.append(orders_totals[index]["count"])
                     total_earns += totals[index]["sum"]
                     total_orders += orders_totals[index]["count"]
-                    total_earn[idx] = total_earns
-                    total_order[idx] = total_orders
+                    total_earn.append(total_earns)
+                    total_order.append(total_orders)
                 except:
                     None
 
-            data["dates"] = date_list
+            data["dates"] = available_dates
             data["values"] = values
             data["totals"] = totals
             data["orders"] = orders
@@ -79,19 +187,19 @@ class BISer(ModelSerializer):
             products.append(data)
 
         return {
-            "dates": date_list, "products":products, 
+            "dates": available_dates, "products":products, 
             "total_earns":total_earns, "total_orders":total_orders, "total_customers":total_customers,
         }
     
     def get_months(self, obj):
         products = []
-        
+        todays_date = datetime.date.today()
         for product in obj.product_set.all():
             months_values = []
             orders = []
             for month in range(1,13):
                 
-                totals = product.entry_set.filter(date__month=month).order_by('date').aggregate(sum =Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
+                totals = product.entry_set.filter(date__month=month).filter(date__year=todays_date.year).order_by('date').aggregate(sum =Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
                 orders_totals = product.entry_set.filter(date__month=month).order_by('date').aggregate(count =Count("id"))
                 months_values.append(round(totals["sum"]/1000000, 2) if totals["sum"] != None else 0)
                 orders.append(orders_totals["count"])

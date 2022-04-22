@@ -69,17 +69,23 @@ class TruckCreate(ListCreateAPIView):
 
 def customers_formula(depot):
     customers = Customer.objects.filter(depot=depot).order_by("name")
+    print("in customers formula")
+    print(len(customers))
     string = ""
     for customer in customers:
         string += f"{customer.name},"
-    return string
+    print(len(string))
+    return customers
 
 def products_formula(depot):
     products = Product.objects.filter(depot=depot).order_by("name")
+    print("in product formula")
     string = ""
     for product in products:
         string += f"{product.name},"
+    print(string)
     return string
+
 
 def create_excel(depot):
     wb = Workbook()
@@ -89,12 +95,16 @@ def create_excel(depot):
     labels = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
     customers = customers_formula(depot)
     products = products_formula(depot)
-    dv = DataValidation(type="list", formula1=f'"{customers}"', allow_blank=False)
-    dv2 = DataValidation(type="list", formula1=f'"{products}"', allow_blank=False)
     
+   
     sheet = wb.active
-    
-    sheet["A1"].value = "ELDORET DEPOT"
+    ws2 = wb.create_sheet(title="customers")
+    for idx, customer in enumerate(customers):
+        ws2[f"A{idx+1}"] = customer.name
+    dv = DataValidation(type="list", formula1="=OFFSET('customers'!$A$1,0,0,COUNTA('customers'!$A:$A) - 0,1)", allow_blank=False)
+    dv2 = DataValidation(type="list", formula1=f'"{products}"', allow_blank=False)
+
+    sheet["A1"].value = depot.name
     sheet["A1"].alignment = Alignment(horizontal='center', vertical='center')
     sheet["A1"].font = Font(size=16, bold=True)
     sheet["A1"].fill =  PatternFill("solid", start_color="00CCFFCC")

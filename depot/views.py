@@ -7,7 +7,7 @@ from django.http import HttpResponse
 import os
 from django.conf import settings
 from django.http import HttpResponse, Http404
-
+from django.contrib.auth.models import User
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.parsers import FileUploadParser, FormParser, MultiPartParser 
@@ -18,6 +18,7 @@ from rest_framework.status import (
 	HTTP_404_NOT_FOUND,
 	)
 
+from rest_framework.views import APIView
 from rest_framework.generics import (
 	# CreateAPIView,
 	ListAPIView,
@@ -28,11 +29,17 @@ from rest_framework.generics import (
 	)
 from customer.models import Customer, Truck
 
-from depot.serializers import ProductListSer, BISer, ProductBISer
+from depot.serializers import MainBISer, ProductListSer, BISer, ProductBISer
 from order.models import Entry
 from customer.views import create_excel
 
 from . models import Product, Depot
+
+
+class MainAPI(RetrieveAPIView):
+	serializer_class = MainBISer
+	queryset = User.objects.all()
+	
 
 class ProductList(ListAPIView):
 	serializer_class = ProductListSer
@@ -42,7 +49,7 @@ class ProductList(ListAPIView):
 		products = Product.objects.filter(depot__id=int(depot_id))
 		return products
 
-class DepotBI(RetrieveAPIView):
+class DepotBI(ListAPIView):
     serializer_class = BISer
     queryset = Depot.objects.all()
 
@@ -154,6 +161,7 @@ class UploadExcel(APIView):
 		
 def download(request, depot_id):
 	create_excel(Depot.objects.get(pk=int(depot_id)))
+	print("worked")
 	with open(f"DailyReportTemplate{depot_id}.xlsx", 'rb') as fh:
 		response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
 		response['Content-Disposition'] = 'inline; filename=' + "DailyReportTemplate.xlsx"
