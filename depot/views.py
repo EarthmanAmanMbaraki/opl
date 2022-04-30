@@ -1,4 +1,5 @@
 import csv
+import quopri
 import openpyxl
 import xlrd
 import codecs
@@ -29,12 +30,46 @@ from rest_framework.generics import (
 	)
 from customer.models import Customer, Truck
 
-from depot.serializers import MainBISer, ProductListSer, BISer, ProductBISer
+from depot.serializers import (
+	DepotCustomerExpandSer,  
+	DepotListTimeSeriesSer,
+	MainBISer, ProductExpandSer,
+	ProductListSer, 
+	BISer, 
+	ProductBISer, 
+	DepotSer, 
+	DepotEntrySer,
+)
 from order.models import Entry
 from customer.views import create_excel
 
-from . models import Product, Depot
+from . models import DepotProduct, Product, Depot
 
+class DepotListTimeSeriesView(RetrieveAPIView):
+	serializer_class = DepotListTimeSeriesSer
+	queryset = User.objects.all()
+	
+class DepotListView(ListAPIView):
+	"""Return data for every depot, organize data by year, month and date"""
+	serializer_class = DepotSer
+	queryset = Depot.objects.all()
+
+class DepotExpandView(ListAPIView):
+	"""Return entry data for every depot, organize data by year, month and date"""
+	serializer_class = DepotEntrySer
+	queryset = Depot.objects.all()
+
+class CustomerExpand(RetrieveAPIView):
+	serializer_class = DepotCustomerExpandSer
+	queryset = Depot.objects.all()
+
+class ProductListView(ListAPIView):
+	serializer_class = ProductListSer
+	queryset = Product.objects.all()
+
+class ProductExpandView(ListAPIView):
+	serializer_class = ProductExpandSer
+	queryset = Product.objects.all()
 
 class MainAPI(RetrieveAPIView):
 	serializer_class = MainBISer
@@ -117,21 +152,17 @@ def upload(row, depot, save):
 		print("truck fail")
 		return False
 	
-	products = Product.objects.filter(name=product).filter(depot=depot)
-	if products.exists():
-		product = products.last()
-	else:
-		print("product fail")
-		return False
+	depot_product = DepotProduct.objects.filter(product__name=product).get(depot=depot)
+
 	
 	if save:
 		entry = Entry.objects.create(
-			product=product, truck=truck, date=date, 
+			product=depot_product, truck=truck, date=date, 
 			order_no=order_no, entry_no=entry_no, vol_obs=vol_obs, 
 			vol_20=vol_20, selling_price=selling_price)
 	else:
 		entry = Entry(
-			product=product, truck=truck, date=date, 
+			product=depot_product, truck=truck, date=date, 
 			order_no=order_no, entry_no=entry_no, vol_obs=vol_obs, 
 			vol_20=vol_20, selling_price=selling_price)
 	return True

@@ -12,7 +12,7 @@ from openpyxl.styles import PatternFill,  Font, Alignment, Protection
 from rest_framework.views import APIView
 from rest_framework.generics import (
 	# CreateAPIView,
-	# ListAPIView,
+	ListAPIView,
 	ListCreateAPIView,
 	# RetrieveAPIView,
 	# RetrieveUpdateAPIView,
@@ -29,7 +29,12 @@ from . serializers import (
     CustomerListSer,
     TruckCreateSer,
     TruckListSer,
+    CustomerExpandSer,
 )
+
+class CustomerExpandView(ListAPIView):
+    serializer_class = CustomerExpandSer
+    queryset = Customer.objects.all()
 
 class CustomerCreate(ListCreateAPIView):
     serializer_class = CustomerCreateSer
@@ -69,21 +74,15 @@ class TruckCreate(ListCreateAPIView):
 
 def customers_formula(depot):
     customers = Customer.objects.filter(depot=depot).order_by("name")
-    print("in customers formula")
-    print(len(customers))
     string = ""
     for customer in customers:
         string += f"{customer.name},"
-    print(len(string))
     return customers
 
-def products_formula(depot):
-    products = Product.objects.filter(depot=depot).order_by("name")
-    print("in product formula")
+def products_formula(products):
     string = ""
     for product in products:
-        string += f"{product.name},"
-    print(string)
+        string += f"{product.product.name},"
     return string
 
 
@@ -94,7 +93,7 @@ def create_excel(depot):
     columns = ["DATE", "PRODUCT", "CUSTOMER", "ORDER NO", "ENTRY NO", "VOL OBS", "VOL 20", "SELLING PRICE"]
     labels = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
     customers = customers_formula(depot)
-    products = products_formula(depot)
+    products = products_formula(depot.depotproduct_set.all())
     
    
     sheet = wb.active

@@ -48,10 +48,15 @@ class Product(models.Model):
     Methods:
         1. __str__(): Display name of the model. returns (product name : depot)
     """
-
-    depot   = models.ForeignKey(Depot, on_delete=models.PROTECT)
-    name    = models.CharField(max_length=50, unique=True)
+    name    = models.CharField(max_length=100)
 
     def __str__(self) -> str:
-        return self.name + " : " + self.depot.__str__()
+        return self.name
 
+
+class DepotProduct(models.Model):
+    depot   = models.ForeignKey(Depot, on_delete=models.PROTECT)
+    product     = models.ForeignKey(Product, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.product.__str__() + " : " + self.depot.__str__()

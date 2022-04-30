@@ -9,7 +9,7 @@ from rest_framework.serializers import (
 from customer.models import Customer
 from django.db.models import Sum, F, FloatField, Count
 from customer.serializers import TruckListSer
-from depot.serializers import ProductListSer
+
 
 from . models import Entry
 
@@ -32,7 +32,6 @@ class EntryCreateSer(ModelSerializer):
         ]
 
 class EntryListSer(ModelSerializer):
-    product = SerializerMethodField()
     truck = SerializerMethodField()
 
     class Meta:
@@ -49,8 +48,6 @@ class EntryListSer(ModelSerializer):
             "selling_price",
         ]
 
-    def get_product(self, obj):
-        return ProductListSer(obj.product).data
 
     def get_truck(self, obj):
         return TruckListSer(obj.truck).data

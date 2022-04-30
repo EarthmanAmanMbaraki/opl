@@ -1,7 +1,7 @@
 from operator import mod
 from django.db import models
 
-from depot.models import Product
+from depot.models import DepotProduct
 from customer.models import Truck
 
 class Entry(models.Model):
@@ -23,7 +23,7 @@ class Entry(models.Model):
     """
 
     # Relations
-    product     = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True)
+    product     = models.ForeignKey(DepotProduct, on_delete=models.PROTECT, null=True, blank=True)
     truck       = models.ForeignKey(Truck, on_delete=models.SET_NULL, null=True)
 
     # Other fields
