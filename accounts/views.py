@@ -43,7 +43,7 @@ class CustomAuthToken(ObtainAuthToken):
 			depot_name = depot_manager.depot.name
 		except:
 			depot_id = None
-			depot_manager = "staff"
+			depot_name = "staff"
 
 		return Response({
 			"status": "success",
