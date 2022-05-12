@@ -14,9 +14,7 @@ class FrontendAppView(View):
     run build`).
     """
     def get(self, request):
-        print("*"*100)
-        print (os.path.join(settings.BASE_DIR, 'build', 'index.html'))
-        print("*"*100)
+        
         try:
             with open(os.path.join(settings.BASE_DIR, 'build', 'index.html')) as f:
                 return HttpResponse(f.read())

@@ -8,13 +8,20 @@ from rest_framework.serializers import (
 	)
 from customer.models import Customer
 from django.db.models import Sum, F, FloatField, Count
-from customer.serializers import TruckListSer
+
 
 
 from . models import Entry
 
 MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
-
+def truncate(f, n):
+    '''Truncates/pads a float f to n decimal places without truncateing'''
+    s = '{}'.format(f)
+    if 'e' in s or 'E' in s:
+        return '{0:.{1}f}'.format(f, n)
+    i, p, d = s.partition('.')
+    return float('.'.join([i, (d+'0'*n)[:n]]))
+    
 class EntryCreateSer(ModelSerializer):
 
     class Meta:
@@ -32,26 +39,38 @@ class EntryCreateSer(ModelSerializer):
         ]
 
 class EntryListSer(ModelSerializer):
+    customer = SerializerMethodField()
+    product = SerializerMethodField()
+    depot = SerializerMethodField()
     truck = SerializerMethodField()
-
+    product_id = SerializerMethodField()
     class Meta:
         model = Entry
         fields = [
             "id",
             "product",
-            "truck",
+            "product_id",
+            "customer",
             "entry_no",
             "order_no",
             "date",
             "vol_obs",
             "vol_20",
             "selling_price",
+            "depot",
+            "truck",
         ]
 
-
+    def get_product(self, obj):
+        return obj.product.product.name
+    def get_customer(self, obj):
+        return obj.truck.customer.name
+    def get_depot(self, obj):
+        return obj.product.depot.name
     def get_truck(self, obj):
-        return TruckListSer(obj.truck).data
-
+        return obj.truck.id
+    def get_product_id(self, obj):
+        return obj.product.id
 
 class CustomerBISer(ModelSerializer):
     orders = SerializerMethodField()
@@ -92,7 +111,7 @@ class CustomerBISer(ModelSerializer):
             entries = Entry.objects.filter(truck__customer=obj)
             totals = entries.filter(date__month=month).order_by('date').aggregate(sum =Sum(F("selling_price") * F('vol_obs'), output_field=FloatField()))
             orders_totals = entries.filter(date__month=month).order_by('date').aggregate(count =Count("id"))
-            months_values.append(round(totals["sum"]/1000000, 2) if totals["sum"] != None else 0)
+            months_values.append(truncate(totals["sum"]/1000000, 2) if totals["sum"] != None else 0)
             orders.append(orders_totals["count"])
         data = {"name":obj.name, "values": months_values, "orders":orders}
 

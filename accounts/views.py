@@ -40,8 +40,10 @@ class CustomAuthToken(ObtainAuthToken):
 		try:
 			depot_manager = user.depotmanager_set.last()
 			depot_id = depot_manager.depot.id
+			depot_name = depot_manager.depot.name
 		except:
 			depot_id = None
+			depot_manager = "staff"
 
 		return Response({
 			"status": "success",
@@ -50,4 +52,6 @@ class CustomAuthToken(ObtainAuthToken):
       		"data":data,
             "token": token.key,
 			"depot_id":depot_id,
+			"depot": depot_name,
+			"is_staff": user.is_staff
 		})

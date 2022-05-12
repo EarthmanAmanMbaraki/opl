@@ -29,8 +29,16 @@ from . serializers import (
     CustomerListSer,
     TruckCreateSer,
     TruckListSer,
-    CustomerExpandSer,
+    CustomerExpandSer, CustomerExpandMonthlySer, CustomerExpandDailySer,
 )
+
+class CustomerExpandMonthlyView(ListAPIView):
+    serializer_class = CustomerExpandMonthlySer
+    queryset = Customer.objects.all()
+
+class CustomerExpandDailyView(ListAPIView):
+    serializer_class = CustomerExpandDailySer
+    queryset = Customer.objects.all()
 
 class CustomerExpandView(ListAPIView):
     serializer_class = CustomerExpandSer

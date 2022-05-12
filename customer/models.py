@@ -20,6 +20,8 @@ class Customer(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
 class Truck(models.Model):
     """Truck model: hold information about a customer truck
 

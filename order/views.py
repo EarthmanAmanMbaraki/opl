@@ -75,6 +75,7 @@ class CreateEntry(ListCreateAPIView):
 
     def get(self, request, *args, **kwargs):
         entries = Entry.objects.all().order_by("-date")
+        print(len(entries))
         serializer = EntryListSer(entries, many=True)
         return Response(serializer.data)
 

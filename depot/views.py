@@ -38,12 +38,19 @@ from depot.serializers import (
 	BISer, 
 	ProductBISer, 
 	DepotSer, 
-	DepotEntrySer,
+	DepotEntrySer, DepotMonthlySer, DepotDailySer,
+	DepotMainDailySer, DepotCustomerSer, ProductDailySer, ProductMonthlySer,
+	DepotCustomerExpandAllSer, DepotCustomerExpandMonthSer,
+	DepotCustomer
 )
 from order.models import Entry
 from customer.views import create_excel
 
 from . models import DepotProduct, Product, Depot
+
+class DepotCustomersList(ListAPIView):
+	serializer_class = DepotCustomer
+	queryset = Depot.objects.all()
 
 class DepotListTimeSeriesView(RetrieveAPIView):
 	serializer_class = DepotListTimeSeriesSer
@@ -59,13 +66,53 @@ class DepotExpandView(ListAPIView):
 	serializer_class = DepotEntrySer
 	queryset = Depot.objects.all()
 
+class DepotMonthlyView(ListAPIView):
+	"""Return entry data for every depot, organize data by year, month and date"""
+	serializer_class = DepotMonthlySer
+	queryset = Depot.objects.all()
+
+class DepotDailyView(ListAPIView):
+	"""Return entry data for every depot, organize data by year, month and date"""
+	serializer_class = DepotDailySer
+	queryset = Depot.objects.all()
+
+class DepotCustomerView(ListAPIView):
+	"""Return entry data for every depot, organize data by year, month and date"""
+	serializer_class = DepotCustomerSer
+	queryset = Depot.objects.all()
+
+
+class DepotMainDailyView(ListAPIView):
+	"""Return entry data for every depot, organize data by year, month and date"""
+	serializer_class = DepotMainDailySer
+	queryset = Depot.objects.all()
+
+
 class CustomerExpand(RetrieveAPIView):
 	serializer_class = DepotCustomerExpandSer
 	queryset = Depot.objects.all()
 
+class CustomerExpandAll(RetrieveAPIView):
+	serializer_class = DepotCustomerExpandAllSer
+	queryset = Depot.objects.all()
+
+class CustomerExpandMonth(RetrieveAPIView):
+	serializer_class = DepotCustomerExpandMonthSer
+	queryset = Depot.objects.all()
+
+
 class ProductListView(ListAPIView):
 	serializer_class = ProductListSer
 	queryset = Product.objects.all()
+
+class ProductDailyView(ListAPIView):
+	serializer_class = ProductDailySer
+	queryset = Product.objects.all()
+
+class ProductMonthlyView(ListAPIView):
+	serializer_class = ProductMonthlySer
+	queryset = Product.objects.all()
+
 
 class ProductExpandView(ListAPIView):
 	serializer_class = ProductExpandSer
@@ -92,7 +139,7 @@ class ProductBI(ListAPIView):
 	serializer_class = ProductBISer
 	def get_queryset(self):
 		depot_id = self.kwargs.get("depot_id")
-		products = Product.objects.filter(depot__id=int(depot_id))
+		products = DepotProduct.objects.filter(depot__id=int(depot_id))
 		return products
 
 def check_headers(file):
@@ -116,8 +163,6 @@ def check_headers(file):
 		reader = data[2:]
 
 	my_headers = ["DATE", "PRODUCT", "CUSTOMER", "ORDER NO", "ENTRY NO", "VOL OBS", "VOL 20", "SELLING PRICE"]
-	print(list(headers))
-	print(my_headers)
 	if list(headers) == my_headers:
 		check = True
 
@@ -130,14 +175,13 @@ def upload(row, depot, save):
 	order_no = row[3]
 	entry_no = row[4]
 	vol_obs = int(row[5])
-	vol_20 = int(row[6])
+	vol_20 = int(row[6]) if row[6] != None else row[6]
 	selling_price = float(row[7])
 	truck = None
 	customers = Customer.objects.filter(name=customer).filter(depot=depot)
 	if customers.exists():
 		customer_model = customers.last()
 		truck = customer_model.truck_set.last()
-		print(truck)
 		if not truck:
 			truck = Truck.objects.create(customer=customer_model, plate_no="default", driver="default")
 		# if trucks.exists():
@@ -149,7 +193,6 @@ def upload(row, depot, save):
 		# 		truck = Truck(customer=customer_model, plate_no=truck_no, driver=customer)
 		
 	if truck == None:
-		print("truck fail")
 		return False
 	
 	depot_product = DepotProduct.objects.filter(product__name=product).get(depot=depot)
@@ -192,7 +235,6 @@ class UploadExcel(APIView):
 		
 def download(request, depot_id):
 	create_excel(Depot.objects.get(pk=int(depot_id)))
-	print("worked")
 	with open(f"DailyReportTemplate{depot_id}.xlsx", 'rb') as fh:
 		response = HttpResponse(fh.read(), content_type="application/vnd.ms-excel")
 		response['Content-Disposition'] = 'inline; filename=' + "DailyReportTemplate.xlsx"

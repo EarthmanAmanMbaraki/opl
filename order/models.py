@@ -31,7 +31,7 @@ class Entry(models.Model):
     order_no        = models.CharField(max_length=50)
     date            = models.DateField()
     vol_obs         = models.FloatField()
-    vol_20          = models.FloatField()
+    vol_20          = models.FloatField(blank=True, null=True)
     selling_price   = models.DecimalField(max_digits=12, decimal_places=2)
 
     is_loaded       = models.BooleanField(default=True)
