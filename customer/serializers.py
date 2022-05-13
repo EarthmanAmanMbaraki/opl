@@ -1,11 +1,10 @@
 import datetime
 from django.utils import timezone
 from django.db.models.functions import ExtractMonth, ExtractYear
-from django.db.models import Sum, F, FloatField, Count
+from django.db.models import Sum, F, FloatField
 from rest_framework.serializers import (
 	ModelSerializer, 
-	SerializerMethodField,
-	ValidationError,	
+	SerializerMethodField,	
 	)
 
 from order.models import Entry
@@ -130,8 +129,6 @@ class CustomerMinExpandSer(ModelSerializer):
 	def get_quantity_daily(self, obj):
 		entries = Entry.objects.filter(truck__customer=obj)
 		return revenue_daily(entries, True)
-
-
 
 class CustomerExpandMonthlySer(ModelSerializer):
 	revenue_monthly = SerializerMethodField()

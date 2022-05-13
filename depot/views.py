@@ -1,44 +1,28 @@
 import csv
-import quopri
 import openpyxl
 import xlrd
 import codecs
 from django.http import HttpResponse
 
-import os
-from django.conf import settings
-from django.http import HttpResponse, Http404
 from django.contrib.auth.models import User
-from django.shortcuts import render
+
 from rest_framework.response import Response
-from rest_framework.parsers import FileUploadParser, FormParser, MultiPartParser 
+from rest_framework.parsers import  MultiPartParser 
 from rest_framework.views import APIView
-from rest_framework.status import (
-	HTTP_400_BAD_REQUEST,
-	HTTP_201_CREATED,
-	HTTP_404_NOT_FOUND,
-	)
 
 from rest_framework.views import APIView
 from rest_framework.generics import (
-	# CreateAPIView,
 	ListAPIView,
-	# ListCreateAPIView,
 	RetrieveAPIView,
-	# RetrieveUpdateAPIView,
-	# UpdateAPIView,
 	)
 from customer.models import Customer, Truck
 
 from depot.serializers import (
 	DepotCustomerExpandSer,  
 	DepotListTimeSeriesSer,
-	MainBISer, ProductExpandSer,
 	ProductListSer, 
-	BISer, 
-	ProductBISer, 
 	DepotSer, 
-	DepotEntrySer, DepotMonthlySer, DepotDailySer,
+	DepotMonthlySer, DepotDailySer,
 	DepotMainDailySer, DepotCustomerSer, ProductDailySer, ProductMonthlySer,
 	DepotCustomerExpandAllSer, DepotCustomerExpandMonthSer,
 	DepotCustomer
@@ -61,11 +45,6 @@ class DepotListView(ListAPIView):
 	serializer_class = DepotSer
 	queryset = Depot.objects.all()
 
-class DepotExpandView(ListAPIView):
-	"""Return entry data for every depot, organize data by year, month and date"""
-	serializer_class = DepotEntrySer
-	queryset = Depot.objects.all()
-
 class DepotMonthlyView(ListAPIView):
 	"""Return entry data for every depot, organize data by year, month and date"""
 	serializer_class = DepotMonthlySer
@@ -81,12 +60,10 @@ class DepotCustomerView(ListAPIView):
 	serializer_class = DepotCustomerSer
 	queryset = Depot.objects.all()
 
-
 class DepotMainDailyView(ListAPIView):
 	"""Return entry data for every depot, organize data by year, month and date"""
 	serializer_class = DepotMainDailySer
 	queryset = Depot.objects.all()
-
 
 class CustomerExpand(RetrieveAPIView):
 	serializer_class = DepotCustomerExpandSer
@@ -100,7 +77,6 @@ class CustomerExpandMonth(RetrieveAPIView):
 	serializer_class = DepotCustomerExpandMonthSer
 	queryset = Depot.objects.all()
 
-
 class ProductListView(ListAPIView):
 	serializer_class = ProductListSer
 	queryset = Product.objects.all()
@@ -113,16 +89,6 @@ class ProductMonthlyView(ListAPIView):
 	serializer_class = ProductMonthlySer
 	queryset = Product.objects.all()
 
-
-class ProductExpandView(ListAPIView):
-	serializer_class = ProductExpandSer
-	queryset = Product.objects.all()
-
-class MainAPI(RetrieveAPIView):
-	serializer_class = MainBISer
-	queryset = User.objects.all()
-	
-
 class ProductList(ListAPIView):
 	serializer_class = ProductListSer
 
@@ -131,22 +97,10 @@ class ProductList(ListAPIView):
 		products = Product.objects.filter(depot__id=int(depot_id))
 		return products
 
-class DepotBI(ListAPIView):
-    serializer_class = BISer
-    queryset = Depot.objects.all()
-
-class ProductBI(ListAPIView):
-	serializer_class = ProductBISer
-	def get_queryset(self):
-		depot_id = self.kwargs.get("depot_id")
-		products = DepotProduct.objects.filter(depot__id=int(depot_id))
-		return products
-
 def check_headers(file):
 	check = False
 	if file.name.endswith(".csv"):
 		reader = csv.reader(codecs.iterdecode(file, 'utf-8'))
-		depot_title = next(reader)
 		headers = next(reader)
 	elif file.name.endswith(".xlsx"):
 		
@@ -230,9 +184,7 @@ class UploadExcel(APIView):
 		else:
 			
 			return Response({"status":"fail", "message": "Make sure the file used is correct."})
-		
-		
-		
+				
 def download(request, depot_id):
 	create_excel(Depot.objects.get(pk=int(depot_id)))
 	with open(f"DailyReportTemplate{depot_id}.xlsx", 'rb') as fh:

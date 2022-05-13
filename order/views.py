@@ -1,31 +1,17 @@
 import csv
-
-
-from unicodedata import name
 from django.shortcuts import render
 from rest_framework.response import Response
-from rest_framework.status import (
-	HTTP_400_BAD_REQUEST,
-	HTTP_201_CREATED,
-	HTTP_404_NOT_FOUND,
-	)
-# from rest_framework.views import APIView
+
 from rest_framework.generics import (
-	# CreateAPIView,
-	ListAPIView,
 	ListCreateAPIView,
-	# RetrieveAPIView,
-	# RetrieveUpdateAPIView,
-	# UpdateAPIView,
     RetrieveUpdateDestroyAPIView,
 	)
 from . models import Entry
-from customer.models import Customer, Truck
+from customer.models import Truck
 from depot.models import Product
 
 from order.serializer import (
     EntryCreateSer, EntryListSer,
-    CustomerBISer,
 )
 
 def excel_upload(request):
@@ -88,10 +74,6 @@ class CreateEntry(ListCreateAPIView):
             return Response(serializer.data)
         else:
             print(serializer.errors)
-
-class CustomerBI(ListAPIView):
-    serializer_class = CustomerBISer
-    queryset = Customer.objects.all()
 
 class UpdateEntry(RetrieveUpdateDestroyAPIView):
     serializer_class = EntryCreateSer

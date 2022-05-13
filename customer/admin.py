@@ -7,11 +7,8 @@ from . models import (
     Truck,
 )
 class CustomerResource(resources.ModelResource):
-
     class Meta:
         model = Customer
-
-
 
 class CustomerAdmin(ImportExportModelAdmin):
     resource_class = CustomerResource

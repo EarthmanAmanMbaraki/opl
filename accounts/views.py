@@ -1,24 +1,6 @@
-from django.shortcuts import render, get_object_or_404
-
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
-# from rest_framework.permissions import AllowAny, IsAuthenticated
-
-# from rest_framework.status import (
-# 	HTTP_400_BAD_REQUEST,
-# 	HTTP_201_CREATED,
-# 	HTTP_200_OK
-# 	)
 from rest_framework.response import Response
-
-# from rest_framework.generics import (
-# 	CreateAPIView,
-# 	ListAPIView,
-# 	ListCreateAPIView,
-# 	RetrieveAPIView,
-# 	RetrieveUpdateAPIView,
-# 	UpdateAPIView,
-# 	)
 
 class CustomAuthToken(ObtainAuthToken):
 

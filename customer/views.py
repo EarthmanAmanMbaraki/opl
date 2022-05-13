@@ -11,19 +11,16 @@ from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.styles import PatternFill,  Font, Alignment, Protection
 from rest_framework.views import APIView
 from rest_framework.generics import (
-	# CreateAPIView,
+
 	ListAPIView,
 	ListCreateAPIView,
-	# RetrieveAPIView,
-	# RetrieveUpdateAPIView,
-	# UpdateAPIView,
 	)
 
 from . models import (
 	Customer,
     Truck,
 )
-from depot.models import Depot, Product
+
 from . serializers import (
 	CustomerCreateSer,
     CustomerListSer,

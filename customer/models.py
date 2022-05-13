@@ -1,4 +1,3 @@
-from lib2to3.pgen2 import driver
 from django.db import models
 from depot.models import Depot
 from django.db.models.signals import post_save
