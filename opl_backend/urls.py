@@ -4,6 +4,11 @@ from main.views import FrontendAppView
 
 handler404 = FrontendAppView.as_view()
 handler500 = FrontendAppView.as_view()
+
+admin.site.site_header = "OnePet Admin Site"
+admin.site.site_title = "Admin"
+admin.site.index_title = "Welcome to Admin Panel"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls", namespace="accounts")),
